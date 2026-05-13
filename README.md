@@ -34,6 +34,6 @@ An intelligent financial tool designed to optimize investment portfolios by auto
 
 | Name | Role | Core Tech Stack | Responsibilities |
 | --- | --- | --- | --- |
-| **Sneha Das** | **ML Specialist** | Python, Scikit-learn, XGBoost, Pandas, yfinance | **The "Intelligence":** Building the clustering pipeline and regression models to optimize harvest timing. |
-| **Ansh Jaiswal** | **Frontend Engineer** | React.js/Next.js, Tailwind CSS, Recharts | **The "Interface":** Visualizing complex data into a user-friendly dashboard with interactive risk/asset charts. |
-| **Adveta Rai** | **Backend Engineer** | FastAPI/Node.js, PostgreSQL | **The "Engine":** Architecting the database, handling the trade processing logic, and the backtesting loop. |
+| **[Sneha Das](https://github.com/Snehadas2005)** | **ML Specialist** | Python, Scikit-learn, XGBoost, Pandas, yfinance | **The "Intelligence":** Building the clustering pipeline and regression models to optimize harvest timing. |
+| **[Ansh Jaiswal](https://github.com/ansh1004-hub)** | **Frontend Engineer** | React.js/Next.js, Tailwind CSS, Recharts | **The "Interface":** Visualizing complex data into a user-friendly dashboard with interactive risk/asset charts. |
+| **[Adveta Rai](https://github.com/AdvetaRai)** | **Backend Engineer** | FastAPI/Node.js, PostgreSQL | **The "Engine":** Architecting the database, handling the trade processing logic, and the backtesting loop. |
