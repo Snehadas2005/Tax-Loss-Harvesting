@@ -1,10 +1,10 @@
-"use client"; // Required for interactivity (useState)
+"use client";
 
-import { useState } from "react";
-import { ArrowRight, CheckCircle2, Search } from "lucide-react";
+import { useState, useEffect } from "react"; // 1. Import useEffect!
+import { ArrowRight, CheckCircle2, Search, Loader2 } from "lucide-react";
 
-// Our mock data
-const tradeHistory = [
+// We keep the mock data here, but imagine this is sitting on Adveta's database
+const mockDatabase = [
   {
     id: 1,
     date: "Nov 15, 2023",
@@ -47,17 +47,33 @@ const tradeHistory = [
   },
 ];
 
+// Define a Type for our Data so TypeScript stays happy
+type Trade = (typeof mockDatabase)[0];
+
 export default function TradeTable() {
-  // 1. Create the State to hold whatever the user types
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 2. The Filtering Logic
-  // We take the original array and filter it BEFORE drawing the table
-  const filteredTrades = tradeHistory.filter((trade) => {
-    // Convert everything to lowercase so "TCS" and "tcs" match
-    const searchLower = searchTerm.toLowerCase();
+  // 2. New States for Data Fetching
+  const [trades, setTrades] = useState<Trade[]>([]); // Starts as an empty array
+  const [isLoading, setIsLoading] = useState(true); // Starts as 'true' because we are loading!
 
-    // Return true if the search term is found in the 'sold' OR 'bought' column
+  // 3. The useEffect API Handshake
+  useEffect(() => {
+    // This code runs EXACTLY ONCE when the component first appears on screen
+
+    // We use setTimeout to fake a slow internet connection / server response
+    const fetchFakeData = setTimeout(() => {
+      setTrades(mockDatabase); // Put the data into state
+      setIsLoading(false); // Turn off the loading spinner
+    }, 1500); // 1500 milliseconds = 1.5 seconds
+
+    // Cleanup function
+    return () => clearTimeout(fetchFakeData);
+  }, []); // <-- This empty array [] means "Only run this once on load"
+
+  // 4. Filtering Logic (now uses the 'trades' state instead of the hardcoded array)
+  const filteredTrades = trades.filter((trade) => {
+    const searchLower = searchTerm.toLowerCase();
     return (
       trade.sold.toLowerCase().includes(searchLower) ||
       trade.bought.toLowerCase().includes(searchLower)
@@ -66,7 +82,6 @@ export default function TradeTable() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6 mb-12">
-      {/* Header & Search Bar Section */}
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-800">
@@ -76,17 +91,14 @@ export default function TradeTable() {
             A log of all tax-loss swaps executed by the algorithm.
           </p>
         </div>
-
-        {/* The Search Input */}
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search stock ticker..."
-            // 3. When the user types, update the state!
             onChange={(e) => setSearchTerm(e.target.value)}
             value={searchTerm}
-            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64"
+            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
           />
         </div>
       </div>
@@ -102,8 +114,18 @@ export default function TradeTable() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            {/* 4. Map through the FILTERED list, not the original list */}
-            {filteredTrades.length > 0 ? (
+            {/* 5. Handle the Loading UI */}
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="p-12 text-center text-slate-500">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    {/* A spinning loading icon */}
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                    <p>Fetching data from simulation engine...</p>
+                  </div>
+                </td>
+              </tr>
+            ) : filteredTrades.length > 0 ? (
               filteredTrades.map((trade) => (
                 <tr
                   key={trade.id}
@@ -137,7 +159,6 @@ export default function TradeTable() {
                 </tr>
               ))
             ) : (
-              // 5. What to show if the search finds nothing
               <tr>
                 <td colSpan={4} className="p-8 text-center text-slate-500">
                   No trades found matching "{searchTerm}"
