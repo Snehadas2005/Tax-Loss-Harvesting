@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react"; // 1. Import useEffect!
-import { ArrowRight, CheckCircle2, Search, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+// Added the 'X' icon for our close button, and 'Info' for the modal
+import {
+  ArrowRight,
+  CheckCircle2,
+  Search,
+  Loader2,
+  X,
+  Info,
+} from "lucide-react";
 
-// We keep the mock data here, but imagine this is sitting on Adveta's database
+// I added 'reason' and 'fees' to the mock data to make the modal interesting!
 const mockDatabase = [
   {
     id: 1,
@@ -12,6 +20,9 @@ const mockDatabase = [
     bought: "TCS.NS",
     taxSaved: 4500,
     status: "Completed",
+    reason:
+      "INFY dropped 8% below cost basis. Swapped to TCS to maintain IT sector exposure.",
+    fees: 15.5,
   },
   {
     id: 2,
@@ -20,6 +31,9 @@ const mockDatabase = [
     bought: "ICICIBANK.NS",
     taxSaved: 12000,
     status: "Completed",
+    reason:
+      "HDFCBANK stagnant. Harvested loss to offset previous capital gains.",
+    fees: 22.0,
   },
   {
     id: 3,
@@ -28,6 +42,8 @@ const mockDatabase = [
     bought: "ONGC.NS",
     taxSaved: 8500,
     status: "Completed",
+    reason: "Energy sector rebalancing. Captured 5% loss on RELIANCE.",
+    fees: 18.75,
   },
   {
     id: 4,
@@ -36,6 +52,8 @@ const mockDatabase = [
     bought: "HCLTECH.NS",
     taxSaved: 3200,
     status: "Completed",
+    reason: "Algorithmic trigger: 30-day moving average crossover.",
+    fees: 12.0,
   },
   {
     id: 5,
@@ -44,34 +62,29 @@ const mockDatabase = [
     bought: "WIPRO.NS",
     taxSaved: 2100,
     status: "Pending",
+    reason: "Awaiting market open for execution.",
+    fees: 0.0,
   },
 ];
 
-// Define a Type for our Data so TypeScript stays happy
 type Trade = (typeof mockDatabase)[0];
 
 export default function TradeTable() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 2. New States for Data Fetching
-  const [trades, setTrades] = useState<Trade[]>([]); // Starts as an empty array
-  const [isLoading, setIsLoading] = useState(true); // Starts as 'true' because we are loading!
+  // NEW STATE: This remembers which trade was clicked. Null means no trade is clicked.
+  const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
 
-  // 3. The useEffect API Handshake
   useEffect(() => {
-    // This code runs EXACTLY ONCE when the component first appears on screen
-
-    // We use setTimeout to fake a slow internet connection / server response
     const fetchFakeData = setTimeout(() => {
-      setTrades(mockDatabase); // Put the data into state
-      setIsLoading(false); // Turn off the loading spinner
-    }, 1500); // 1500 milliseconds = 1.5 seconds
-
-    // Cleanup function
+      setTrades(mockDatabase);
+      setIsLoading(false);
+    }, 1500);
     return () => clearTimeout(fetchFakeData);
-  }, []); // <-- This empty array [] means "Only run this once on load"
+  }, []);
 
-  // 4. Filtering Logic (now uses the 'trades' state instead of the hardcoded array)
   const filteredTrades = trades.filter((trade) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -81,7 +94,8 @@ export default function TradeTable() {
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6 mb-12">
+    // We added 'relative' here so the modal knows where to attach itself
+    <div className="relative bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6 mb-12">
       <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-800">
@@ -114,12 +128,10 @@ export default function TradeTable() {
             </tr>
           </thead>
           <tbody className="text-sm">
-            {/* 5. Handle the Loading UI */}
             {isLoading ? (
               <tr>
                 <td colSpan={4} className="p-12 text-center text-slate-500">
                   <div className="flex flex-col items-center justify-center gap-2">
-                    {/* A spinning loading icon */}
                     <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
                     <p>Fetching data from simulation engine...</p>
                   </div>
@@ -129,7 +141,10 @@ export default function TradeTable() {
               filteredTrades.map((trade) => (
                 <tr
                   key={trade.id}
-                  className="border-b border-slate-50 hover:bg-slate-50 transition-colors"
+                  // NEW: When a row is clicked, save that specific trade into our state!
+                  onClick={() => setSelectedTrade(trade)}
+                  // NEW: Added cursor-pointer so the mouse turns into a hand
+                  className="border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   <td className="p-4 text-slate-600">{trade.date}</td>
                   <td className="p-4 flex items-center gap-3 font-medium">
@@ -168,6 +183,78 @@ export default function TradeTable() {
           </tbody>
         </table>
       </div>
+
+      {/* --- NEW: THE MODAL POPUP --- */}
+      {/* If selectedTrade is NOT null, draw this HTML on top of everything */}
+      {selectedTrade && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          {/* The Modal Card */}
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-slate-50 p-4 border-b border-slate-100 flex items-center justify-between">
+              <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                <Info className="w-5 h-5 text-blue-500" />
+                Execution Details
+              </h4>
+              {/* Close Button: Sets state back to null! */}
+              <button
+                onClick={() => setSelectedTrade(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-md transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span className="text-sm text-slate-500">Transaction Date</span>
+                <span className="font-medium text-slate-800">
+                  {selectedTrade.date}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-500 mb-1">
+                  Algorithm Reasoning
+                </p>
+                <p className="text-sm text-slate-700 bg-blue-50 p-3 rounded-lg border border-blue-100 leading-relaxed">
+                  {selectedTrade.reason}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                  <p className="text-xs text-emerald-600 mb-1 font-medium">
+                    Net Tax Saved
+                  </p>
+                  <p className="text-lg font-bold text-emerald-700">
+                    ₹{selectedTrade.taxSaved.toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <p className="text-xs text-slate-500 mb-1 font-medium">
+                    Brokerage Fees
+                  </p>
+                  <p className="text-lg font-bold text-slate-700">
+                    ₹{selectedTrade.fees.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setSelectedTrade(null)}
+                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
