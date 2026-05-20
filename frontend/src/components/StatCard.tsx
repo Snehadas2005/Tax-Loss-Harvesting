@@ -1,43 +1,47 @@
-import { LucideIcon } from "lucide-react";
+import { IndianRupee, TrendingUp, ListChecks } from "lucide-react";
 
-// This is a "Type Definition" - it tells TypeScript exactly what
-// information this component needs to work.
+// Notice how we are teaching it what 'icon' means right here!
 interface StatCardProps {
   title: string;
   value: string;
-  icon: LucideIcon;
   trend: string;
-  trendType: "positive" | "negative";
+  icon: "currency" | "chart" | "list";
 }
 
-export default function StatCard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  trendType,
-}: StatCardProps) {
+export default function StatCard({ title, value, trend, icon }: StatCardProps) {
+  const isPositive = trend.startsWith("+");
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        {/* The Title */}
-        <span className="text-slate-500 text-sm font-medium">{title}</span>
-        {/* The Icon Container */}
-        <div className="bg-blue-50 p-2 rounded-lg">
-          <Icon className="w-5 h-5 text-blue-600" />
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-200">
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          {title}
+        </h3>
+        <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+          {icon === "currency" && (
+            <IndianRupee className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          )}
+          {icon === "chart" && (
+            <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          )}
+          {icon === "list" && (
+            <ListChecks className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          )}
         </div>
       </div>
-      <div>
-        {/* The Main Number */}
-        <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
-        {/* The Trend Text (Changes color based on trendType) */}
-        <p
-          className={`text-xs mt-1 font-medium ${trendType === "positive" ? "text-emerald-600" : "text-rose-600"}`}
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+          {value}
+        </h2>
+        <span
+          className={`text-xs font-medium ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
         >
-          {trend}{" "}
-          <span className="text-slate-400 font-normal">vs last month</span>
-        </p>
+          {trend}
+        </span>
       </div>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+        vs last month
+      </p>
     </div>
   );
 }

@@ -1,77 +1,68 @@
-import { User, Bell, Shield, ArrowLeft } from "lucide-react";
+"use client";
+
+import { Moon, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react"; // 1. Import useEffect and useState
 
 export default function SettingsPage() {
+  // 2. Grab 'resolvedTheme' instead of just 'theme'
+  const { setTheme, resolvedTheme } = useTheme();
+
+  // 3. Create a 'mounted' state to prevent React confusion
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-slate-50 p-8">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 transition-colors duration-200">
       <div className="max-w-3xl mx-auto">
-        {/* 1. The Next.js Link Component */}
         <Link
           href="/"
-          className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 mb-8 transition-colors"
+          className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Link>
 
-        <h1 className="text-2xl font-bold text-slate-900 mb-8">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">
           Account Settings
         </h1>
 
-        {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="bg-blue-100 p-4 rounded-full">
-              <User className="w-8 h-8 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Ansh Jaiswal</h2>
-              <p className="text-sm text-slate-500">Frontend Developer</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                value="ansh.jaiswal@example.com"
-                disabled
-                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Role
-              </label>
-              <input
-                type="text"
-                value="Lead Frontend Engineer"
-                disabled
-                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Preferences Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Bell className="w-5 h-5 text-slate-400" /> Notifications
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 transition-colors duration-200">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <Moon className="w-5 h-5 text-slate-400 dark:text-blue-400" />{" "}
+            Appearance
           </h3>
-          <div className="flex items-center justify-between py-3 border-b border-slate-50">
+
+          <div className="flex items-center justify-between py-3">
             <div>
-              <p className="font-medium text-slate-700">Harvesting Alerts</p>
-              <p className="text-sm text-slate-500">
-                Email me when a tax-loss opportunity is found.
+              <p className="font-medium text-slate-700 dark:text-slate-200">
+                Dark Mode
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Toggle dark mode interface.
               </p>
             </div>
-            {/* A simple mock toggle switch */}
-            <div className="w-11 h-6 bg-blue-600 rounded-full relative cursor-pointer">
-              <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1"></div>
-            </div>
+
+            {/* 4. Only draw the button AFTER the page mounts and knows the true theme */}
+            {mounted ? (
+              <button
+                onClick={() =>
+                  setTheme(resolvedTheme === "dark" ? "light" : "dark")
+                }
+                className={`w-11 h-6 rounded-full relative transition-colors duration-300 focus:outline-none ${resolvedTheme === "dark" ? "bg-blue-600" : "bg-slate-300"}`}
+              >
+                <div
+                  className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-300 ${resolvedTheme === "dark" ? "translate-x-6" : "translate-x-1"}`}
+                ></div>
+              </button>
+            ) : (
+              // A temporary invisible placeholder so the layout doesn't jump
+              <div className="w-11 h-6"></div>
+            )}
           </div>
         </div>
       </div>

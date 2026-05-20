@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react"; // 1. Import the useState hook
 import {
   AreaChart,
   Area,
@@ -10,65 +9,66 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useState } from "react";
 
-// Our 5-year data
-const fiveYearData = [
+const data5Years = [
   { year: "2019", Standard: 100000, Harvested: 100000 },
-  { year: "2020", Standard: 108000, Harvested: 111500 },
+  { year: "2020", Standard: 108000, Harvested: 112000 },
   { year: "2021", Standard: 125000, Harvested: 132000 },
   { year: "2022", Standard: 115000, Harvested: 126000 },
-  { year: "2023", Standard: 135000, Harvested: 149500 },
+  { year: "2023", Standard: 135000, Harvested: 150000 },
 ];
 
-// Our 1-year data (just monthly data for 2023)
-const oneYearData = [
-  { year: "Jan", Standard: 126000, Harvested: 126000 },
-  { year: "Apr", Standard: 128000, Harvested: 131000 },
-  { year: "Jul", Standard: 131000, Harvested: 138000 },
-  { year: "Oct", Standard: 129000, Harvested: 142000 },
-  { year: "Dec", Standard: 135000, Harvested: 149500 },
+const data1Year = [
+  { year: "Jan", Standard: 115000, Harvested: 115000 },
+  { year: "Apr", Standard: 118000, Harvested: 121000 },
+  { year: "Jul", Standard: 122000, Harvested: 128000 },
+  { year: "Oct", Standard: 128000, Harvested: 139000 },
+  { year: "Dec", Standard: 135000, Harvested: 150000 },
 ];
 
 export default function TaxAlphaChart() {
-  // 2. Create the State.
-  // 'timeframe' is the current value. 'setTimeframe' is the function to change it.
   const [timeframe, setTimeframe] = useState<"1Y" | "5Y">("5Y");
-
-  // 3. Decide which data to show based on the state
-  const currentData = timeframe === "5Y" ? fiveYearData : oneYearData;
+  const currentData = timeframe === "5Y" ? data5Years : data1Year;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-4 mt-6">
-      <div className="flex justify-between items-start">
-        <div className="flex flex-col">
-          <h3 className="text-lg font-bold text-slate-800">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 mt-6 transition-colors duration-200">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-white">
             Tax Alpha Generation
           </h3>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Portfolio value: Standard vs. Harvested over time
           </p>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-lg">
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setTimeframe("1Y")}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${timeframe === "1Y" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+              timeframe === "1Y"
+                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
           >
             1 Year
           </button>
           <button
             onClick={() => setTimeframe("5Y")}
-            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${timeframe === "5Y" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+              timeframe === "5Y"
+                ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
           >
             5 Years
           </button>
         </div>
       </div>
 
-      {/* The Chart */}
       <div className="h-[300px] w-full mt-4">
         <ResponsiveContainer width="100%" height="100%">
-          {/* NO QUOTES around the curly braces here! */}
           <AreaChart
             data={currentData}
             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -87,6 +87,7 @@ export default function TaxAlphaChart() {
               strokeDasharray="3 3"
               vertical={false}
               stroke="#e2e8f0"
+              strokeOpacity={0.5}
             />
             <XAxis
               dataKey="year"
@@ -102,8 +103,6 @@ export default function TaxAlphaChart() {
               axisLine={false}
               tickFormatter={(value) => `₹${value / 1000}k`}
             />
-
-            {/* NO QUOTES around the contentStyle braces here either! */}
             <Tooltip
               contentStyle={{
                 borderRadius: "8px",
@@ -111,7 +110,6 @@ export default function TaxAlphaChart() {
                 boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
               }}
             />
-
             <Area
               type="monotone"
               dataKey="Standard"
