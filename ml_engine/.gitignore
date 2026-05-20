@@ -1,1 +1,18 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Local Data Cache (Don't push huge data files)
+ml_engine/data/raw/
+ml_engine/data/processed/
+data/
+
+# Machine Learning Binaries (Teammates should generate these locally)
+models/*.pkl
+*.pkl
+
+# Environments & IDEs
+.venv/
+venv/
 .env
+.vscode/
