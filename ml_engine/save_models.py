@@ -1,41 +1,42 @@
 import os
-import pickle
+import kagglehub
 from src.processor import DataProcessor
 from src.clustering import PortfolioClusterer
 from src.prediction import TrendPredictor
+from src.models import ModelArena
 
-def train_and_serialize_models():
-    # 1. Create the models directory if it doesn't exist
-    os.makedirs("models", exist_ok=True)
-    
-    # 2. Setup our Data Pipeline
-    print("📥 Downloading data universe for training...")
-    universe = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'V', 'PG', 'KO', 'PEP']
-    processor = DataProcessor(universe, start_date='2021-01-01', end_date='2026-01-01')
+
+def execute_combination_one():
+    print("🚀 --- COMMENCING COMBINATION 1 TRIAL --- 🚀")
+    path = kagglehub.dataset_download("rohanrao/nifty50-stock-market-data")
+
+    tickers = ["INFY", "TCS", "RELIANCE", "HDFCBANK", "ICICIBANK", "ITC", "SBIN"]
+    processor = DataProcessor(
+        path, tickers, start_date="2016-01-01", end_date="2021-12-31"
+    )
     processor.download_data()
-    
-    # 3. Train the K-Means Cluster Model
-    print("🤖 Training K-Means Clusterer...")
-    clusterer = PortfolioClusterer(n_clusters=3)
-    clusterer.fit_clusters(processor)
-    
-    # 4. Train the Trend Prediction Model
-    print("🎯 Training Trend Predictor...")
-    predictor = TrendPredictor()
-    predictor.train_model(processor, 'AAPL')
-    
-    # 5. Serialize and Save the Models to Disk (.pkl files)
-    print("\n💾 Freezing models into binary file formats...")
-    
-    cluster_file_path = "models/clusterer.pkl"
-    with open(cluster_file_path, 'wb') as file:
-        pickle.dump(clusterer, file)
-    print(f"✅ Saved: {cluster_file_path}")
-        
-    predictor_file_path = "models/predictor.pkl"
-    with open(predictor_file_path, 'wb') as file:
-        pickle.dump(predictor, file)
-    print(f"✅ Saved: {predictor_file_path}")
+
+    # Run Regressor Arena Check
+    blueprint = TrendPredictor()
+    X, y = blueprint._prepare_data(processor.raw_data["INFY"], is_training=True)
+
+    arena = ModelArena()
+    champ_name, logs = arena.walk_forward_validation(X, y)
+
+    # Run Cluster Option A (KMeans)
+    clusterer_k = PortfolioClusterer(n_clusters=3, algorithm="KMeans")
+    clusterer_k.fit_clusters(processor)
+
+    # Run Cluster Option B (Hierarchical)
+    clusterer_h = PortfolioClusterer(n_clusters=3, algorithm="Hierarchical")
+    clusterer_h.fit_clusters(processor)
+
+    print("\n📝 EXPERIMENT NOTEBOOK DETAILS:")
+    print(f"1. Record the Mean Directional Accuracy and RMSE metrics printed above.")
+    print(
+        f"2. Toggle 'algorithm' inside clustering configurations to note variations in risk twin sets."
+    )
+
 
 if __name__ == "__main__":
-    train_and_serialize_models()
+    execute_combination_one()

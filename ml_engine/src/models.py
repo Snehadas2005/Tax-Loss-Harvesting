@@ -24,7 +24,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import warnings
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple, Optional, Dict
+from sklearn.model_selection import TimeSeriesSplit
+from xgboost import XGBRegressor
+import lightgbm as lgb
+from src.evaluation import FinancialEvaluator
 
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
@@ -570,3 +574,69 @@ class ModelRegistry:
             ("XGBoost", XGBoostPredictor(n_estimators=100)),
             ("LightGBM", LightGBMPredictor(n_estimators=100)),
         ]
+
+
+class ModelArena:
+    def __init__(self):
+        self.models = {
+            "LinearRegression": LinearRegression(),
+            "XGBoost": XGBRegressor(
+                n_estimators=100, learning_rate=0.05, max_depth=4, random_state=42
+            ),
+            "LightGBM": lgb.LGBMRegressor(
+                n_estimators=100,
+                learning_rate=0.05,
+                max_depth=4,
+                random_state=42,
+                verbose=-1,
+            ),
+        }
+        self.champion_model = None
+        self.champion_name = None
+
+    def walk_forward_validation(self, X, y, n_splits=5):
+        """Executes walk-forward chronological validation."""
+        tscv = TimeSeriesSplit(n_splits=n_splits)
+        arena_results = {}
+
+        print(
+            f"🔬 Evaluating Model Combinations across {n_splits} Chronological Horizons..."
+        )
+
+        for name, model in self.models.items():
+            fold_accuracies = []
+            fold_rmses = []
+
+            for train_idx, test_idx in tscv.split(X):
+                X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+                y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+
+                model.fit(X_train, y_train)
+                preds = model.predict(X_test)
+
+                stats = FinancialEvaluator.evaluate_statistical_errors(y_test, preds)
+                dir_acc = FinancialEvaluator.calculate_directional_accuracy(
+                    y_test, preds
+                )
+
+                fold_accuracies.append(dir_acc)
+                fold_rmses.append(stats["RMSE"])
+
+            mean_dir_acc = np.mean(fold_accuracies)
+            mean_rmse = np.mean(fold_rmses)
+
+            arena_results[name] = {
+                "Directional_Accuracy": round(mean_dir_acc, 2),
+                "RMSE": round(mean_rmse, 4),
+            }
+            print(
+                f"   📊 {name} -> Mean Directional Accuracy: {mean_dir_acc:.2f}% | Mean RMSE: {mean_rmse:.4f}"
+            )
+
+        self.champion_name = max(
+            arena_results, key=lambda k: arena_results[k]["Directional_Accuracy"]
+        )
+        self.champion_model = self.models[self.champion_name]
+
+        print(f"\n👑 WINNING REGRESSOR FOR COMBINATION 1: {self.champion_name}")
+        return self.champion_name, arena_results

@@ -279,7 +279,7 @@ def compute_directional_metrics(
     # AUC-ROC — use raw predicted value as score
     try:
         # Shift to [0,1] probability-like range
-        pred_scores = (y_pred - y_pred.min()) / (y_pred.ptp() + 1e-9)
+        pred_scores = (y_pred - y_pred.min()) / ((y_pred.max() - y_pred.min()) + 1e-9)
         auc = float(roc_auc_score(labels_true, pred_scores))
     except ValueError:
         auc = 0.5
@@ -671,3 +671,25 @@ def print_comparison_table(model_results: List[ModelComparisonResult]) -> None:
     print("=" * 90)
     print("Thresholds for publishable result: R² > 0.30, DA > 0.55, Overfit < 1.40")
     print()
+
+
+class FinancialEvaluator:
+    """Wrapper class providing validation helper methods for model evaluation."""
+
+    @staticmethod
+    def evaluate_statistical_errors(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+        """Computes basic statistical metrics (RMSE, etc.) for models.py compatibility."""
+        metrics = compute_regression_metrics(y_true, y_pred)
+        return {
+            "RMSE": metrics.rmse,
+            "MAE": metrics.mae,
+            "R2": metrics.r2,
+            "MAPE": metrics.mape
+        }
+
+    @staticmethod
+    def calculate_directional_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+        """Computes directional accuracy percentage (0-100) for models.py compatibility."""
+        metrics = compute_directional_metrics(y_true, y_pred)
+        return metrics.directional_accuracy * 100
+
