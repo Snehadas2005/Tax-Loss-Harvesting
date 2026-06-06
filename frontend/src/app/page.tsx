@@ -1,12 +1,33 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import StatCard from "@/components/StatCard";
 import TaxAlphaChart from "@/components/TaxAlphaChart";
 import TradeTable from "@/components/TradeTable";
+import OpportunitiesPanel from "@/components/OpportunitiesPanel"; // Live ML Opportunities Scanner
 import { Settings } from "lucide-react";
 import Link from "next/link";
+import { api } from "@/lib/api";
 
 export default function Home() {
+  const [stats, setStats] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    api
+      .dashboard()
+      .then((data) => {
+        setStats(data.stats || []);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch dashboard summary", err);
+        setIsLoading(false);
+      });
+  }, []);
+
   return (
-    // Added dark:bg-slate-950 here for the main background
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8 transition-colors duration-200">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -22,27 +43,27 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            title="Total Tax Saved"
-            value="₹45,200"
-            trend="+12%"
-            icon="currency"
-          />
-          <StatCard
-            title="Harvesting Alpha"
-            value="3.2%"
-            trend="+0.5%"
-            icon="chart"
-          />
-          <StatCard
-            title="Active Opportunities"
-            value="12 Stocks"
-            trend="-2"
-            icon="list"
-          />
+          {isLoading ? (
+            <>
+              <div className="h-28 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />
+              <div className="h-28 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />
+              <div className="h-28 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />
+            </>
+          ) : (
+            stats.map((stat: any, index: number) => (
+              <StatCard
+                key={stat.title}
+                title={stat.title}
+                value={stat.value}
+                trend={stat.trend}
+                icon={index === 0 ? "currency" : index === 1 ? "chart" : "list"}
+              />
+            ))
+          )}
         </div>
 
         <TaxAlphaChart />
+        <OpportunitiesPanel />
         <TradeTable />
       </div>
     </main>

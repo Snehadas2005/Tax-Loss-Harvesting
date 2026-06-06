@@ -1,0 +1,6 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/ml_engine"
+  ],
+  "python.defaultInterpreterPath": "c:\\Users\\Sneha Das\\Downloads\\Tax-Loss-Harvesting\\Tax-Loss-Harvesting\\backend\\.venv\\Scripts\\python.exe"
+}

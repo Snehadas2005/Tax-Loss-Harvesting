@@ -9,6 +9,7 @@ import {
   X,
   Info,
 } from "lucide-react";
+import { api } from "@/lib/api";
 
 const mockDatabase = [
   {
@@ -74,12 +75,17 @@ export default function TradeTable() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
 
   useEffect(() => {
-    const fetchFakeData = setTimeout(() => {
-      setTrades(mockDatabase);
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(fetchFakeData);
-  }, []);
+    setIsLoading(true);
+    api.trades(searchTerm, "")
+      .then((data) => {
+        setTrades(data || []);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch trades", err);
+        setIsLoading(false);
+      });
+  }, [searchTerm]);
 
   const filteredTrades = trades.filter((trade) => {
     const searchLower = searchTerm.toLowerCase();

@@ -70,3 +70,16 @@ class SettingsUpdate(BaseModel):
     )
 
     model_config = {"populate_by_name": True}
+
+
+class PortfolioAsset(BaseModel):
+    ticker: str = Field(..., example="AAPL")
+    purchase_price: float = Field(..., description="The price at which the investor bought the stock", example=190.0, alias="purchasePrice")
+    current_price: float = Field(..., description="The current market price of the asset", example=161.5, alias="currentPrice")
+
+    model_config = {"populate_by_name": True}
+
+
+class HarvestRequest(BaseModel):
+    portfolio: list[PortfolioAsset]
+
