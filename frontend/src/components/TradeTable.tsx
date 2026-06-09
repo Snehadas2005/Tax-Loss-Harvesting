@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const mockDatabase = [
   {
     id: 1,
@@ -75,14 +76,14 @@ export default function TradeTable() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
 
   useEffect(() => {
-    setIsLoading(true);
     api.trades(searchTerm, "")
       .then((data) => {
-        setTrades(data || []);
-        setIsLoading(false);
+        setTrades(Array.isArray(data) ? data : []);
       })
       .catch((err) => {
         console.error("Failed to fetch trades", err);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, [searchTerm]);
@@ -183,7 +184,7 @@ export default function TradeTable() {
                   colSpan={4}
                   className="p-8 text-center text-slate-500 dark:text-slate-400"
                 >
-                  No trades found matching "{searchTerm}"
+                  No trades found matching &quot;{searchTerm}&quot;
                 </td>
               </tr>
             )}

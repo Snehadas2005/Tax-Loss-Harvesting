@@ -1,18 +1,23 @@
-import sys
 import os
+import sys
+import io
 import pickle
 import threading
 from functools import lru_cache
 from datetime import datetime
 from typing import Literal
-
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
-# Inject ml_engine src path to make src.models, src.processor, etc. importable
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ml_engine"))
-)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
+ML_ENGINE_PATH = os.path.join(PROJECT_ROOT, "ml_engine")
+
+if ML_ENGINE_PATH not in sys.path:
+    sys.path.insert(0, ML_ENGINE_PATH)
 
 from src import DataProcessor, PortfolioClusterer, TrendPredictor, TaxBacktester
 
@@ -76,20 +81,20 @@ def load_or_train_models():
     )
 
     if os.path.exists(CLUSTER_MODEL_PATH) and os.path.exists(PREDICTOR_MODEL_PATH):
-        print("⚙️ Loading Pre-trained ML Engine Models from Disk...")
+        print("[ML Engine] Loading Pre-trained ML Engine Models from Disk...")
         try:
             with open(CLUSTER_MODEL_PATH, "rb") as file:
                 cluster_engine = pickle.load(file)
             with open(PREDICTOR_MODEL_PATH, "rb") as file:
                 predictor = pickle.load(file)
         except Exception as e:
-            print(f"⚠️ Error loading pickles: {e}. Retraining...")
+            print(f"[Warning] Error loading pickles: {e}. Retraining...")
             cluster_engine = None
             predictor = None
 
     if cluster_engine is None or predictor is None:
         print(
-            "🤖 Pre-trained binary model files missing or invalid. Training on-the-fly..."
+            "[ML Engine] Pre-trained binary model files missing or invalid. Training on-the-fly..."
         )
         try:
             # 1. Download data
@@ -100,24 +105,24 @@ def load_or_train_models():
             cluster_engine.fit_clusters(data_pipeline)
             with open(CLUSTER_MODEL_PATH, "wb") as file:
                 pickle.dump(cluster_engine, file)
-            print(f"✅ Saved clusterer: {CLUSTER_MODEL_PATH}")
+            print(f"[Success] Saved clusterer: {CLUSTER_MODEL_PATH}")
 
             # 3. Train and save trend predictor model
             predictor = TrendPredictor()
             predictor.train_model(data_pipeline, "AAPL")
             with open(PREDICTOR_MODEL_PATH, "wb") as file:
                 pickle.dump(predictor, file)
-            print(f"✅ Saved predictor: {PREDICTOR_MODEL_PATH}")
+            print(f"[Success] Saved predictor: {PREDICTOR_MODEL_PATH}")
         except Exception as e:
-            print(f"❌ Error training models on the fly: {e}")
+            print(f"[Error] Error training models on the fly: {e}")
 
-    print("🚀 ML Engine Models loaded and ready.")
+    print("[ML Engine] Models loaded and ready.")
 
 
 @lru_cache(maxsize=128)
 def get_cached_backtest(initial_capital: float, tax_rate: float):
     print(
-        f"🧪 Running historical backtest simulation (Capital={initial_capital}, TaxRate={tax_rate})..."
+        f"[Backtest] Running historical backtest simulation (Capital={initial_capital}, TaxRate={tax_rate})..."
     )
     backtester = TaxBacktester(initial_capital=initial_capital, tax_rate=tax_rate)
     # Run simulation on GLOBAL_UNIVERSE
@@ -154,7 +159,7 @@ def get_cached_backtest(initial_capital: float, tax_rate: float):
         },
         "time_series_chart_data": chart_data,
     }
-    print("✅ Backtest simulation cached successfully.")
+    print("[Backtest] Backtest simulation cached successfully.")
     return result
 
 
@@ -164,7 +169,7 @@ def startup_event():
     load_or_train_models()
 
     # Pre-warm the backtest cache in a background thread to make the first page load instant
-    print("🔥 Pre-warming backtest simulation cache...")
+    print("[Cache] Pre-warming backtest simulation cache...")
     threading.Thread(
         target=get_cached_backtest, args=(100000.0, 0.15), daemon=True
     ).start()

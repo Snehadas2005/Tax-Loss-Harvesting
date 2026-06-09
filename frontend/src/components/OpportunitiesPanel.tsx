@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import {
   TrendingDown,
@@ -14,6 +14,14 @@ import {
   AlertCircle
 } from "lucide-react";
 
+interface Recommendation {
+  ticker: string;
+  current_loss_pct: number;
+  predicted_30d_return_pct: number;
+  recommended_action: "HARVEST_NOW" | "HOLD_REBOUND_LIKELY" | "HOLD_ASSET_HEALTHY";
+  suggested_substitutes?: string[];
+}
+
 export default function OpportunitiesPanel() {
   const [portfolio, setPortfolio] = useState([
     { ticker: "AAPL", purchasePrice: 190.0, currentPrice: 161.5 },
@@ -22,14 +30,14 @@ export default function OpportunitiesPanel() {
     { ticker: "JPM", purchasePrice: 195.0, currentPrice: 170.0 }
   ]);
 
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
   const [newTicker, setNewTicker] = useState("");
   const [newPurchasePrice, setNewPurchasePrice] = useState("");
   const [newCurrentPrice, setNewCurrentPrice] = useState("");
 
-  const fetchRecommendations = () => {
+  const fetchRecommendations = useCallback(() => {
     setIsLoading(true);
     // Transform parameters to match API structure
     const payload = portfolio.map(item => ({
@@ -49,11 +57,14 @@ export default function OpportunitiesPanel() {
         console.error("Failed to fetch ML recommendations", err);
         setIsLoading(false);
       });
-  };
+  }, [portfolio]);
 
   useEffect(() => {
-    fetchRecommendations();
-  }, [portfolio]);
+    const timer = setTimeout(() => {
+      fetchRecommendations();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchRecommendations]);
 
   const addAsset = (e: React.FormEvent) => {
     e.preventDefault();

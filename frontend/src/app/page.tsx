@@ -9,20 +9,26 @@ import { Settings } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+interface StatData {
+  title: string;
+  value: string;
+  trend: string;
+}
+
 export default function Home() {
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState<StatData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
     api
       .dashboard()
       .then((data) => {
         setStats(data.stats || []);
-        setIsLoading(false);
       })
       .catch((err) => {
         console.error("Failed to fetch dashboard summary", err);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, []);
@@ -50,7 +56,7 @@ export default function Home() {
               <div className="h-28 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 animate-pulse" />
             </>
           ) : (
-            stats.map((stat: any, index: number) => (
+            stats.map((stat: StatData, index: number) => (
               <StatCard
                 key={stat.title}
                 title={stat.title}

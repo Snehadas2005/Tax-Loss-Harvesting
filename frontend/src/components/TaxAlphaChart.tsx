@@ -9,45 +9,46 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
+interface ChartPointData {
+  date: string;
+  baseline_value: number;
+  active_value: number;
+  tax_savings_cumulative: number;
+}
+
 export default function TaxAlphaChart() {
   const [timeframe, setTimeframe] = useState<"1Y" | "5Y">("5Y");
-  const [fullData, setFullData] = useState<any[]>([]);
-  const [currentData, setCurrentData] = useState<any[]>([]);
+  const [fullData, setFullData] = useState<ChartPointData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
     api.backtest()
       .then((res) => {
         if (res && res.time_series_chart_data) {
           setFullData(res.time_series_chart_data);
         }
-        setIsLoading(false);
       })
       .catch((err) => {
         console.error("Failed to fetch backtest data", err);
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, []);
 
-  useEffect(() => {
-    if (fullData.length === 0) return;
+  const currentData = useMemo(() => {
+    if (fullData.length === 0) return [];
 
-    let rendered = fullData;
-    if (timeframe === "1Y") {
-      // Approximate 252 trading days for 1 year
-      rendered = fullData.slice(-252);
-    }
+    const rendered = timeframe === "1Y" ? fullData.slice(-252) : fullData;
 
     // Downsample chart data to at most 150 points for smooth Recharts rendering
     const maxPoints = 150;
     const step = Math.max(1, Math.floor(rendered.length / maxPoints));
-    const downsampled = rendered.filter((_, idx) => idx % step === 0);
-    setCurrentData(downsampled);
+    return rendered.filter((_, idx) => idx % step === 0);
   }, [fullData, timeframe]);
 
   return (
@@ -137,7 +138,7 @@ export default function TaxAlphaChart() {
                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 }}
                 labelFormatter={(label) => `Date: ${label}`}
-                formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, ""]}
+                formatter={(value) => [`₹${Number(value).toLocaleString()}`, ""]}
               />
               <Area
                 type="monotone"
