@@ -1,48 +1,113 @@
 import os
-import pandas as pd
 import numpy as np
+import pandas as pd
+import yfinance as yf
+import logging
+from typing import Dict, Any, List, Optional
+from .models import load_pipeline
+
+logger = logging.getLogger(__name__)
+
+
+class TaxLossProcessor:
+    """
+    Production execution matrix expecting Champion Combination B profiles
+    to drive the UI dashboard frontend environment safely.
+    """
+
+    def __init__(
+        self, models_dir: str = "models", config: Optional[Dict[str, Any]] = None
+    ):
+        self.models_dir = models_dir
+        self.config = config or {}
+        self.min_harvest_loss_pct = self.config.get("min_harvest_loss_pct", -0.05)
+        self.downside_floor_limit = self.config.get("downside_floor_limit", -0.03)
+        self.median_rebound_target = self.config.get("median_rebound_target", 0.005)
+
+        # Load production artifacts (which we will save as Combination B)
+        self.clusterer, self.predictor = load_pipeline(self.models_dir)
+
+    def process_portfolio_state(
+        self,
+        portfolio_df: pd.DataFrame,
+        features_df: pd.DataFrame,
+        wash_sale_registry: List[str],
+    ) -> List[Dict[str, Any]]:
+        harvest_opportunities = []
+
+        for _, row in portfolio_df.iterrows():
+            ticker = row["ticker"]
+            cost_basis = row["cost_basis"]
+            current_price = row["current_price"]
+            quantity = row["quantity"]
+
+            unrealized_return = (current_price - cost_basis) / cost_basis
+            if unrealized_return > self.min_harvest_loss_pct:
+                continue
+
+            if ticker not in features_df.index:
+                continue
+
+            # Combination B Predictor returns three distinct risk quantiles
+            asset_features = features_df.loc[[ticker]]
+            quantile_preds = self.predictor.predict(asset_features)
+
+            downside_floor = quantile_preds["quantile_0.1"].values[0]
+            median_expectation = quantile_preds["quantile_0.5"].values[0]
+            upside_rebound = quantile_preds["quantile_0.9"].values[0]
+
+            # Tail-risk mitigation rules
+            if (
+                downside_floor < self.downside_floor_limit
+                or median_expectation < self.median_rebound_target
+            ):
+                continue
+
+            try:
+                best_proxy_substitute = self.clusterer.get_substitute_asset(
+                    ticker=ticker, excluded_tickers=wash_sale_registry.copy()
+                )
+            except Exception:
+                best_proxy_substitute = None
+
+            if not best_proxy_substitute:
+                continue
+
+            estimated_loss_harvested = (cost_basis - current_price) * quantity
+            gmm_distribution = self.clusterer.get_cluster_probabilities(ticker)
+            proxy_distribution = self.clusterer.get_cluster_probabilities(
+                best_proxy_substitute
+            )
+            structural_overlap = 1.0 - (
+                np.linalg.norm(gmm_distribution - proxy_distribution) / np.sqrt(2)
+            )
+
+            opportunity_payload = {
+                "target_ticker": ticker,
+                "substitute_ticker": best_proxy_substitute,
+                "unrealized_return": float(unrealized_return),
+                "estimated_loss_harvested": float(estimated_loss_harvested),
+                "confidence_overlap_score": float(structural_overlap),
+                "risk_profile": {
+                    "downside_floor_10pct": float(downside_floor),
+                    "median_return_50pct": float(median_expectation),
+                    "upside_potential_90pct": float(upside_rebound),
+                },
+            }
+            harvest_opportunities.append(opportunity_payload)
+
+        harvest_opportunities.sort(
+            key=lambda x: x["estimated_loss_harvested"], reverse=True
+        )
+        return harvest_opportunities
 
 
 class DataProcessor:
-    def __init__(self, *args, **kwargs):
-        # Resolve signature dynamically to support both:
-        # 1. DataProcessor(tickers: list, start_date: str, end_date: str)
-        # 2. DataProcessor(dataset_path: str, tickers: list, start_date: str, end_date: str)
-        # Supports both positional and keyword argument structures.
-        self.dataset_path = None
-        self.tickers = []
-        self.start_date = None
-        self.end_date = None
-
-        # Parse positional arguments
-        if len(args) > 0:
-            if isinstance(args[0], list):
-                # Old signature: DataProcessor(tickers, start_date, end_date)
-                self.tickers = args[0]
-                if len(args) > 1:
-                    self.start_date = pd.to_datetime(args[1])
-                if len(args) > 2:
-                    self.end_date = pd.to_datetime(args[2])
-            else:
-                # New signature: DataProcessor(dataset_path, tickers, start_date, end_date)
-                self.dataset_path = args[0]
-                if len(args) > 1:
-                    self.tickers = args[1]
-                if len(args) > 2:
-                    self.start_date = pd.to_datetime(args[2])
-                if len(args) > 3:
-                    self.end_date = pd.to_datetime(args[3])
-
-        # Parse or override with keyword arguments
-        if "dataset_path" in kwargs:
-            self.dataset_path = kwargs["dataset_path"]
-        if "tickers" in kwargs:
-            self.tickers = kwargs["tickers"]
-        if "start_date" in kwargs:
-            self.start_date = pd.to_datetime(kwargs["start_date"])
-        if "end_date" in kwargs:
-            self.end_date = pd.to_datetime(kwargs["end_date"])
-
+    def __init__(self, tickers, start_date, end_date, dataset_path=None):
+        self.tickers = tickers
+        self.start_date = start_date
+        self.end_date = end_date
+        self.dataset_path = dataset_path
         self.tickers = [t.upper() for t in self.tickers]
         self.raw_data = None
 
@@ -124,21 +189,3 @@ class DataProcessor:
 
         return rsi.iloc[-1]  # Return the most recent RSI value
 
-
-# This goes at the bottom of src/processor.py
-if __name__ == "__main__":
-    print("🚀 Running a quick verification test on DataProcessor...")
-
-    # Initialize with our test universe
-    test_tickers = ["AAPL", "MSFT", "GOOGL"]
-    processor = DataProcessor(test_tickers, "2023-01-01", "2024-01-01")
-
-    # 1. Test Risk Metrics Extraction
-    metrics = processor.calculate_risk_metrics()
-    print("\n📈 Extracted Risk Metrics:")
-    print(metrics)
-
-    # 2. Test Technical Indicator Engineering
-    print("\n🔍 Testing technical indicator extraction for AAPL:")
-    latest_rsi = processor.calculate_technical_indicators("AAPL")
-    print(f"Latest Calculated RSI for AAPL: {latest_rsi:.2f}")

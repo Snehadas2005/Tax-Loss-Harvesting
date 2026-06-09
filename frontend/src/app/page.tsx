@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import StatCard from "@/components/StatCard";
-import TaxAlphaChart from "@/components/TaxAlphaChart";
-import TradeTable from "@/components/TradeTable";
-import OpportunitiesPanel from "@/components/OpportunitiesPanel"; // Live ML Opportunities Scanner
 import { Settings } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+
+const TaxAlphaChart = dynamic(() => import("@/components/TaxAlphaChart"), { ssr: false });
+const TradeTable = dynamic(() => import("@/components/TradeTable"), { ssr: false });
+const OpportunitiesPanel = dynamic(() => import("@/components/OpportunitiesPanel"), { ssr: false });
 
 interface StatData {
   title: string;
