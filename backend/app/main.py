@@ -98,6 +98,10 @@ def load_or_train_models():
         print("[ML Engine] Running in proxy mode (ML_ENGINE_URL is set). Local model loading/training bypassed.")
         return
 
+    if DataProcessor is None:
+        print("[ML Engine] Local ML engine modules are missing. Bypassing local model loading/training.")
+        return
+
     os.makedirs("models", exist_ok=True)
     data_pipeline = DataProcessor(
         GLOBAL_UNIVERSE,
