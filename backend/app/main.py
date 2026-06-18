@@ -150,6 +150,8 @@ def load_or_train_models():
 
 @lru_cache(maxsize=128)
 def get_cached_backtest(initial_capital: float, tax_rate: float):
+    if TaxBacktester is None:
+        raise RuntimeError("Local ML Engine is not available (TaxBacktester is None). Please configure ML_ENGINE_URL.")
     print(
         f"[Backtest] Running historical backtest simulation (Capital={initial_capital}, TaxRate={tax_rate})..."
     )
@@ -198,7 +200,7 @@ def startup_event():
     load_or_train_models()
 
     # Pre-warm the backtest cache in a background thread to make the first page load instant
-    if not ML_ENGINE_URL:
+    if not ML_ENGINE_URL and TaxBacktester is not None:
         print("[Cache] Pre-warming backtest simulation cache...")
         threading.Thread(
             target=get_cached_backtest, args=(100000.0, 0.15), daemon=True
