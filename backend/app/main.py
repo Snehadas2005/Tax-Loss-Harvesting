@@ -201,6 +201,15 @@ def startup_event():
         ).start()
 
 
+@app.get("/")
+def read_root() -> dict[str, str]:
+    return {
+        "status": "healthy",
+        "service": "Tax-Loss Harvesting Backend API",
+        "docs": "/docs"
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
