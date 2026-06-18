@@ -1,11 +1,4 @@
 fastapi
 uvicorn
 pydantic
-scikit-learn
-xgboost
-yfinance
-pandas
-numpy
-lightgbm
-kagglehub
 httpx
