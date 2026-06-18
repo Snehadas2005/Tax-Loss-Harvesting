@@ -120,7 +120,7 @@ def run_historical_backtest(initial_capital: float = 100000.0, tax_rate: float =
     try:
         backtester = TaxBacktester(initial_capital=initial_capital, tax_rate=tax_rate)
         # Run historical backtest over static macro tracking interval
-        history_df = backtester.run_simulation(GLOBAL_UNIVERSE, "2022-01-01", "2025-12-31")
+        history_df = backtester.run_simulation(GLOBAL_UNIVERSE, "2022-01-01", "2025-12-31", dataset_path=DATASET_PATH)
         
         chart_data = []
         for date, row in history_df.iterrows():

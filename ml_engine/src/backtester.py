@@ -19,7 +19,7 @@ class TaxBacktester:
         self.predictor = predictor if predictor else TrendPredictor()
         self.clusterer = clusterer if clusterer else PortfolioClusterer(n_clusters=3)
 
-    def run_simulation(self, tickers, start_date, end_date):
+    def run_simulation(self, tickers, start_date, end_date, dataset_path=None):
         """
         Simulates a portfolio over time, applying the true custom ML clustering and
         prediction framework dynamically to harvest losses and calculate Tax Alpha.
@@ -29,7 +29,7 @@ class TaxBacktester:
         )
 
         # 1. Pipeline Initialization & Ingestion
-        processor = DataProcessor(tickers, start_date, end_date)
+        processor = DataProcessor(tickers, start_date, end_date, dataset_path=dataset_path)
         prices_df = processor.download_data()
 
         # Ensure our injected clusterer maps the asset space dataset features
