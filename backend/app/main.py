@@ -16,10 +16,21 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
 ML_ENGINE_PATH = os.path.join(PROJECT_ROOT, "ml_engine")
 
-if ML_ENGINE_PATH not in sys.path:
-    sys.path.insert(0, ML_ENGINE_PATH)
+ML_ENGINE_URL = os.environ.get("ML_ENGINE_URL")
 
-from src import DataProcessor, PortfolioClusterer, TrendPredictor, TaxBacktester
+# Dynamically import ML classes only if running locally (no ML_ENGINE_URL proxy config)
+DataProcessor = None
+PortfolioClusterer = None
+TrendPredictor = None
+TaxBacktester = None
+
+if not ML_ENGINE_URL:
+    if ML_ENGINE_PATH not in sys.path:
+        sys.path.insert(0, ML_ENGINE_PATH)
+    try:
+        from src import DataProcessor, PortfolioClusterer, TrendPredictor, TaxBacktester
+    except ImportError as e:
+        print(f"[Warning] Failed to import local ML engine: {e}. Local ML execution will not be available.")
 
 from app import store
 from app.schemas import (
@@ -38,13 +49,23 @@ app = FastAPI(
     description="Backend API for the Tax-Loss Harvesting dashboard.",
 )
 
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+if os.environ.get("ALLOWED_ORIGINS"):
+    allowed_origins.extend(os.environ.get("ALLOWED_ORIGINS").split(","))
+else:
+    # Safely allow any origin in development/deployment if not specified
+    allowed_origins.append("*")
+
+# If wildcard is used, allow_credentials must be False to comply with CORS standards
+allow_credentials = "*" not in allowed_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,6 +93,10 @@ data_pipeline = None
 
 def load_or_train_models():
     global cluster_engine, predictor, data_pipeline
+
+    if ML_ENGINE_URL:
+        print("[ML Engine] Running in proxy mode (ML_ENGINE_URL is set). Local model loading/training bypassed.")
+        return
 
     os.makedirs("models", exist_ok=True)
     data_pipeline = DataProcessor(
@@ -169,10 +194,11 @@ def startup_event():
     load_or_train_models()
 
     # Pre-warm the backtest cache in a background thread to make the first page load instant
-    print("[Cache] Pre-warming backtest simulation cache...")
-    threading.Thread(
-        target=get_cached_backtest, args=(100000.0, 0.15), daemon=True
-    ).start()
+    if not ML_ENGINE_URL:
+        print("[Cache] Pre-warming backtest simulation cache...")
+        threading.Thread(
+            target=get_cached_backtest, args=(100000.0, 0.15), daemon=True
+        ).start()
 
 
 @app.get("/health")
@@ -221,6 +247,22 @@ def update_settings(payload: SettingsUpdate) -> dict:
 @app.post("/api/v1/recommend")
 def recommend_harvest_actions(request: HarvestRequest):
     global cluster_engine, predictor, data_pipeline
+
+    if ML_ENGINE_URL:
+        try:
+            import httpx
+            with httpx.Client(timeout=60.0) as client:
+                resp = client.post(
+                    f"{ML_ENGINE_URL.rstrip('/')}/api/v1/recommend",
+                    json=request.model_dump()
+                )
+                resp.raise_for_status()
+                return resp.json()
+        except Exception as e:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Error communicating with Render ML Engine: {str(e)}"
+            )
 
     if cluster_engine is None or predictor is None or data_pipeline is None:
         raise HTTPException(
@@ -279,6 +321,22 @@ def recommend_harvest_actions(request: HarvestRequest):
 
 @app.get("/api/v1/backtest")
 def run_historical_backtest(initial_capital: float = 100000.0, tax_rate: float = 0.15):
+    if ML_ENGINE_URL:
+        try:
+            import httpx
+            with httpx.Client(timeout=60.0) as client:
+                resp = client.get(
+                    f"{ML_ENGINE_URL.rstrip('/')}/api/v1/backtest",
+                    params={"initial_capital": initial_capital, "tax_rate": tax_rate}
+                )
+                resp.raise_for_status()
+                return resp.json()
+        except Exception as e:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Error communicating with Render ML Engine: {str(e)}"
+            )
+
     try:
         # Fetch from the cache
         return get_cached_backtest(initial_capital, tax_rate)
