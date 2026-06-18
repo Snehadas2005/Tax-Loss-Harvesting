@@ -1,4 +1,4 @@
-# 📊 Portfolio Rebalancer: AI Tax-Loss Harvesting Engine
+# Portfolio Rebalancer: AI Tax-Loss Harvesting Engine
 
 An intelligent financial engineering tool designed to optimize investment portfolios by automating **Tax-Loss Harvesting**. The application identifies "stagnant losers" under tax-deduction guidelines, forecasts forward asset movement via probabilistic machine learning model ensembles, and executes structural risk-matched twin swaps to maintain target market exposure without violating the Regulatory Wash-Sale framework.
 
@@ -29,7 +29,7 @@ graph TD
 
 ---
 
-## 🧠 Deep-Dive Machine Learning Architecture (The Whys & Hows)
+## Deep-Dive Machine Learning Architecture (The Whys & Hows)
 
 To make this framework research-grade, the system shifts away from basic rule-based scripts into statistical learning models. Below is the technical breakdown of how and why each component operates.
 
@@ -38,13 +38,13 @@ To make this framework research-grade, the system shifts away from basic rule-ba
 * **The Component:** Unsupervised Asset Segmentation (`ml_engine/src/clustering.py`)
 * **The Math Models:** Gaussian Mixture Models (GMM) vs. Density-Based OPTICS vs. Classical K-Means.
 
-#### ❓ Why use this?
+#### Why use this?
 
 In tax-loss harvesting, when you sell a losing asset to claim a tax deduction, you face a major problem called **Investor Regret**—the risk that the asset bounces back immediately after you sell it, causing you to miss out on the rally. To maintain your structural market exposure, you must buy a "Twin Substitute" asset that behaves almost identically.
 
 Standard hardcoded sector groupings (e.g., pairing a tech stock with any other tech stock) fail to capture rolling intraday risk similarities. We use mathematical clustering to find statistical twins based on pure trailing performance and annualized volatility vectors.
 
-#### ⚙️ How it works:
+#### How it works:
 
 1. **Feature Ingestion:** The `DataProcessor` extracts daily log returns and transforms them into an annualized Mean Return ($\mu$) and Annualized Volatility ($\sigma$) feature space for the asset universe.
 2. **Soft Clustered Distributions (GMM):** Unlike K-Means, which forces every stock into rigid, hard circular boundaries, a **Gaussian Mixture Model (GMM)** calculates a *soft probability distribution profile* for each asset. It models the stock market as a mixture of multiple independent normal distributions.
@@ -58,13 +58,13 @@ Standard hardcoded sector groupings (e.g., pairing a tech stock with any other t
 * **The Component:** Supervised Trend Forecasting Engine (`ml_engine/src/prediction.py`)
 * **The Math Models:** Multi-Quantile Gradient Boosting Regressors (GBR) vs. XGBoost Trees vs. Linear Extrapolation.
 
-#### ❓ Why use this?
+#### Why use this?
 
 Traditional tax-loss systems operate on a basic rule: *If an asset drops by 10%, sell it immediately.* This is financially sub-optimal. If a high-growth stock drops by 10% due to temporary market panic but is statistically poised for a massive 15% rebound over the next 30 days, liquidating it locks in a permanent loss.
 
 We apply machine learning regression models to evaluate the forward 30-day directional projection vector **before** a sell signal is allowed to release.
 
-#### ⚙️ How it works:
+#### How it works:
 
 1. **Feature Engineering:** The engine creates rolling technical markers on the trailing window, including Momentum vectors (10-day price rates of change) and Volatility Bands (20-day rolling standard deviations).
 2. **Quantile Loss Minimization:** Instead of predicting just a single average price using standard Mean Squared Error (MSE), our champion **Quantile GBR Ensemble** runs three parallel regressions minimizing pinned check loss functions at specific target intervals:
@@ -84,11 +84,11 @@ If the model forecasts a sharp rebound ($\ge 4\%$), the engine overrides the dra
 
 * **The Component:** Historical Evaluation Harness (`ml_engine/src/backtester.py`)
 
-#### ❓ Why use this?
+####  Why use this?
 
 To prove the economic validity of an ML strategy, it must be backtested chronologically without look-ahead bias (data leakage). The simulation engine demonstrates exactly how much tax alpha the models generate compared to a standard Buy-and-Hold index portfolio across complete historical market cycles.
 
-#### ⚙️ How it works:
+####  How it works:
 
 1. **Data Isolation:** The backtester steps day-by-day through the historical timeline. When running calculations for a specific date, it truncates the dataset to that exact day (`prices_df.loc[:current_date]`). This guarantees that future prices are invisible to the model weights.
 2. **Wash-Sale Regulatory Intercept:** The system implements a strict 30-day countdown timer wrapper. When a harvest swap occurs, a cooling counter is activated (`wash_sale_timer = 30`). This prevents the system from buying back into the original asset too quickly, ensuring complete compliance with regulatory tax guidelines.
@@ -102,7 +102,7 @@ $$\text{Tax Alpha} = \frac{\text{Final Active Value} - \text{Final Baseline Valu
 
 ---
 
-## 🏗️ Repository Directory Structure
+## Repository Directory Structure
 
 * **`ml_engine/`**: Core machine learning module.
   * `src/clustering.py`: Multi-component Gaussian Mixture Models and legacy K-Means/OPTICS wrappers.
@@ -119,7 +119,7 @@ $$\text{Tax Alpha} = \frac{\text{Final Active Value} - \text{Final Baseline Valu
 
 ---
 
-## 🚀 Local Installation & Run Guide
+## Local Installation & Run Guide
 
 ### Prerequisite: Setup Python Virtual Environment
 
@@ -192,7 +192,7 @@ npm run dev
 
 ---
 
-## 📊 Algorithmic Trial Benchmark Results & Analysis
+## Algorithmic Trial Benchmark Results & Analysis
 
 During our model evaluation run (`save_models.py`) across a high-volatility tech growth universe (`['TSLA', 'NVDA', 'AMZN', 'META', 'AAPL', 'MSFT']`) from `2021-01-01` to `2025-01-01`, the system generated these results:
 
@@ -202,7 +202,7 @@ During our model evaluation run (`save_models.py`) across a high-volatility tech
 | **Trial 2** (OPTICS + XGBoost) | **1 Swap** | `$212,791.64` | `$1,573.85` | 46.78% | **Transaction Efficient Winner** |
 | **Trial 3** (GMM + Quantile) | 7 Swaps | `$504,181.74` | `$17,504.41` | 338.17% | High Liquidation Target |
 
-### 🔬 Empirical Finding Analysis (For Research Defense)
+### Empirical Finding Analysis (For Research Defense)
 
 1. **Why Trial A and Trial 3 Are Identical:** Under the hood, both the distance-based `KMeans` and probabilistic `GMM` models mapped the volatile asset sub-space identically, pairing **Tesla (TSLA) $\leftrightarrow$ Meta (META)** as matching statistical twins. Because both models pointed to the exact same substitute asset paths during historical drawdowns, they executed identical swaps on identical days, yielding the exact same financial portfolio values down to the penny.
 2. **Why Trial 2 (OPTICS + XGBoost) is the Robust Production Winner:** While Trial A and 3 show a higher raw Tax Alpha by hyper-frequently swapping back and forth between TSLA and META (7 times), they are **over-trading**. In a live brokerage account, transaction fees and bid-ask spreads would severely degrade those returns.
@@ -210,7 +210,7 @@ During our model evaluation run (`save_models.py`) across a high-volatility tech
 
 ---
 
-## 👥 The Team
+## The Team
 
 | Name | Role | Core Tech Stack | Responsibilities |
 | --- | --- | --- | --- |
