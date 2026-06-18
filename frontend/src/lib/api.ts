@@ -1,4 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const rawBase = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const BASE = rawBase.endsWith("/") ? rawBase.slice(0, -1) : rawBase;
 
 export interface SettingsUpdatePayload {
   harvestingAlerts?: boolean;
