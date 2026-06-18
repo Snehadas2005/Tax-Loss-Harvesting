@@ -29,14 +29,6 @@ graph TD
 
 ---
 
-## Live Links
-
-* **Frontend:** https://tax-loss-harvesting-self-ten.vercel.app/
-* **Backend:** https://tax-loss-harvesting-kq5c.vercel.app/
-* **ML Engine:** https://tax-loss-harvesting-3nl2.onrender.com
-
----
-
 ## Deep-Dive Machine Learning Architecture (The Whys & Hows)
 
 To make this framework research-grade, the system shifts away from basic rule-based scripts into statistical learning models. Below is the technical breakdown of how and why each component operates.
@@ -197,6 +189,14 @@ npm run dev
 ```
 
 * Open [http://localhost:3000](http://localhost:3000) on your browser to view the interactive dashboard.
+
+---
+
+## Live Links
+
+* **Frontend:** https://tax-loss-harvesting-self-ten.vercel.app/
+* **Backend:** https://tax-loss-harvesting-kq5c.vercel.app/
+* **ML Engine:** https://tax-loss-harvesting-3nl2.onrender.com
 
 ---
 
