@@ -33,7 +33,9 @@ PREDICTOR_MODEL_PATH = "models/predictor.pkl"
 
 # Global fallback parameters for real-time asset validation calculations
 GLOBAL_UNIVERSE = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'V', 'PG', 'KO', 'PEP']
-data_pipeline = DataProcessor(GLOBAL_UNIVERSE, start_date="2021-01-01", end_date=datetime.now().strftime("%Y-%m-%d"))
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATASET_PATH = os.path.join(CURRENT_DIR, "data")
+data_pipeline = DataProcessor(GLOBAL_UNIVERSE, start_date="2021-01-01", end_date=datetime.now().strftime("%Y-%m-%d"), dataset_path=DATASET_PATH)
 
 # Structural verification check to ensure models have been generated
 if not os.path.exists(CLUSTER_MODEL_PATH) or not os.path.exists(PREDICTOR_MODEL_PATH):

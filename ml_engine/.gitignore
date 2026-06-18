@@ -6,6 +6,7 @@ __pycache__/
 ml_engine/data/raw/
 ml_engine/data/processed/
 data/
+!ml_engine/data/*.csv
 
 # Machine Learning Binaries (Committed to Git to avoid Render build rate-limits)
 # models/*.pkl
