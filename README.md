@@ -192,6 +192,14 @@ npm run dev
 
 ---
 
+## Live Links
+
+* **Frontend:** https://tax-loss-harvesting-self-ten.vercel.app/
+* **Backend:** https://tax-loss-harvesting-kq5c.vercel.app/
+* **ML Engine:** https://tax-loss-harvesting-3nl2.onrender.com
+
+---
+
 ## Algorithmic Trial Benchmark Results & Analysis
 
 During our model evaluation run (`save_models.py`) across a high-volatility tech growth universe (`['TSLA', 'NVDA', 'AMZN', 'META', 'AAPL', 'MSFT']`) from `2021-01-01` to `2025-01-01`, the system generated these results:
