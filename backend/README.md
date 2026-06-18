@@ -1,3 +1,13 @@
+---
+title: TaxLossHarvest
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Tax-Loss Harvesting Backend
 
 FastAPI service for the dashboard. It ships with seed data so the frontend can run immediately, while keeping the API shape ready for a database or ML integration later.
