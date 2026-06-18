@@ -7,9 +7,11 @@ ml_engine/data/raw/
 ml_engine/data/processed/
 data/
 
-# Machine Learning Binaries (Teammates should generate these locally)
-models/*.pkl
-*.pkl
+# Machine Learning Binaries (Committed to Git to avoid Render build rate-limits)
+# models/*.pkl
+# *.pkl
+!models/clusterer.pkl
+!models/predictor.pkl
 
 # Environments & IDEs
 .venv/
